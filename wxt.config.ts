@@ -59,10 +59,10 @@ export default defineConfig({
       "alarms",
       "cookies",
       "contextMenus",
-      "identity",
+      ...(browser !== "safari" ? ["identity"] : []),
       "scripting",
       "webNavigation",
-      ...(browser !== "firefox" ? ["offscreen", "sidePanel"] : []),
+      ...(browser === "chrome" || browser === "edge" ? ["offscreen", "sidePanel"] : []),
     ],
     host_permissions: [
       "*://*/*", // Required for scripting.executeScript in any frame
@@ -72,7 +72,7 @@ export default defineConfig({
     web_accessible_resources: [
       {
         resources: ["assets/*.png", "assets/*.svg", "assets/*.webp"],
-        matches: ["*://*/*", "file:///*"],
+        matches: browser === "safari" ? ["*://*/*"] : ["*://*/*", "file:///*"],
       },
       // The shared content runtime the loader content script imports, and its
       // chunks. No `use_dynamic_url`: Chrome 130 and 131 block a content
@@ -80,11 +80,20 @@ export default defineConfig({
       // (crbug.com/363027634, fixed in 132), so nothing would load there. The
       // chunks couldn't use one anyway, since Chrome resolves a module's
       // relative imports against the extension's static id.
-      {
-        resources: [`${CONTENT_RUNTIME_NAME}.js`, `${CONTENT_RUNTIME_NAME}/*`],
-        matches: ["*://*/*", "file:///*"],
-      },
+      ...(browser === "safari"
+        ? []
+        : [
+            {
+              resources: [`${CONTENT_RUNTIME_NAME}.js`, `${CONTENT_RUNTIME_NAME}/*`],
+              matches: ["*://*/*", "file:///*"],
+            },
+          ]),
     ],
+    ...(browser === "safari" && {
+      browser_specific_settings: {
+        safari: { strict_min_version: "18.6" },
+      },
+    }),
     // Firefox-specific settings for MV3
     ...(browser === "firefox" && {
       // Override default CSP to exclude `upgrade-insecure-requests` (Firefox MV3 default),
@@ -109,6 +118,38 @@ export default defineConfig({
     excludeSources: ["docs/**/*", "assets/**/*", "repos/**/*", "readmes/**/*"],
   },
   hooks: {
+    "prepare:publicPaths": (wxt, paths) => {
+      // The shared TTS code also type-checks when generating Safari's paths.
+      if (wxt.config.browser === "safari") paths.push("offscreen.html")
+    },
+    "entrypoints:resolved": (wxt, entrypoints) => {
+      if (wxt.config.browser !== "safari") return
+
+      for (const entrypoint of entrypoints) {
+        if (entrypoint.type === "background") delete entrypoint.options.type
+      }
+      // Safari plays audio in the background page and has no extension side panel.
+      for (const entrypoint of [...entrypoints]) {
+        if (entrypoint.type === "sidepanel" || entrypoint.name === "offscreen") {
+          entrypoints.splice(entrypoints.indexOf(entrypoint), 1)
+        }
+      }
+    },
+    "build:publicAssets": (wxt, files) => {
+      if (wxt.config.browser !== "safari") return
+
+      // WebKit's implicit background page can decode the multilingual script as non-UTF-8.
+      files.push({
+        relativeDest: "background.html",
+        contents: '<!doctype html><meta charset="UTF-8"><script src="background.js"></script>',
+      })
+    },
+    "build:manifestGenerated": (wxt, manifest) => {
+      if (wxt.config.browser !== "safari" || manifest.manifest_version !== 3) return
+
+      // WXT's MV3 type only models Chromium's service worker field.
+      Object.assign(manifest, { background: { page: "background.html" } })
+    },
     // With local packages the bundle holds @read-frog/layout-engine's readable
     // source, which must never leave this machine.
     "zip:start": () => {
@@ -160,6 +201,7 @@ export default defineConfig({
     },
   },
   vite: (configEnv) => ({
+    ...(configEnv.browser === "safari" && { build: { target: "safari18.6" } }),
     resolve: {
       // CodeMirror breaks with "Unrecognized extension value in extension set"
       // if the bundle contains more than one copy of these packages (#1782).

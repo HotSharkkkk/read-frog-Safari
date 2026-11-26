@@ -13,7 +13,7 @@ export function FloatingButtonPage() {
     >
       <FloatingButtonPreview />
       <DisplaySection />
-      <ClickActionSection />
+      {import.meta.env.BROWSER !== "safari" && <ClickActionSection />}
     </PageLayout>
   )
 }

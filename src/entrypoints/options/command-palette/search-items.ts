@@ -1,5 +1,6 @@
 import type { GeneratedI18nStructure } from "#i18n"
 import type { FeatureTag } from "@/utils/features"
+import { isGoogleDriveAuthSupported } from "@/utils/google-drive/auth"
 import {
   CUSTOM_ACTION_LAYOUT_SECTION_ID,
   CUSTOM_ACTION_NOTEBASE_SECTION_ID,
@@ -27,7 +28,7 @@ type SearchItemDefinition = Omit<SearchItem, "titleKey" | "descriptionKey" | "pa
   pageKey: I18nKey
 }
 
-export const SEARCH_ITEMS: SearchItem[] = [
+const searchItemDefinitions = [
   // Advanced page
   {
     // The page's list of switches, under the description that says what turning a feature off
@@ -624,3 +625,9 @@ export const SEARCH_ITEMS: SearchItem[] = [
     pageKey: "options.tts.title",
   },
 ] satisfies SearchItemDefinition[]
+
+export const SEARCH_ITEMS: SearchItem[] = searchItemDefinitions.filter(({ sectionId }) => {
+  if (sectionId === "floating-button-click-action") return import.meta.env.BROWSER !== "safari"
+  if (sectionId === "google-drive-sync") return isGoogleDriveAuthSupported()
+  return true
+})

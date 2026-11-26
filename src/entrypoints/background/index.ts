@@ -104,10 +104,12 @@ export default defineBackground({
       await openOptionsPage(message.data)
     })
 
-    setupSidePanelMessageHandler({
-      extensionBrowser: browser,
-      registerMessageHandler: onMessage,
-    })
+    if (import.meta.env.BROWSER !== "safari") {
+      setupSidePanelMessageHandler({
+        extensionBrowser: browser,
+        registerMessageHandler: onMessage,
+      })
+    }
 
     onMessage("aiSegmentSubtitles", async (message) => {
       try {

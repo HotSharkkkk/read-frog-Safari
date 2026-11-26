@@ -16,6 +16,7 @@ export interface ContentLoaderOptions {
    * page of its own.
    */
   getTopPageUrl?: () => Promise<string | null>
+  loadRuntime?: () => Promise<ContentRuntime>
 }
 
 // The checks below read the stored config as it is, unparsed: they only spare
@@ -78,9 +79,16 @@ export async function runContentLoader(
   const partsToRun = await selectPartsToRun(parts, options)
   if (partsToRun.length === 0) return
 
+  const runtime =
+    import.meta.env.BROWSER === "safari"
+      ? await options?.loadRuntime?.()
+      : await loadSharedRuntime()
+  await runtime?.runContentParts(partsToRun)
+}
+
+async function loadSharedRuntime(): Promise<ContentRuntime> {
   const runtimeModule = await import(
     /* @vite-ignore */ browser.runtime.getURL(CONTENT_RUNTIME_MODULE_FILE)
   )
-  const runtime: ContentRuntime = await runtimeModule.default
-  await runtime.runContentParts(partsToRun)
+  return runtimeModule.default
 }

@@ -13,6 +13,18 @@ export default defineContentScript({
   matches: subtitlesContentScriptMatches,
   allFrames: true,
   async main() {
-    await runContentLoader(["subtitles"], { getTopPageUrl })
+    await runContentLoader(["subtitles"], {
+      getTopPageUrl,
+      loadRuntime:
+        import.meta.env.BROWSER === "safari"
+          ? async () => {
+              const { createContentRuntime } = await import("@/utils/content-runtime/run")
+              return createContentRuntime({
+                subtitles: async () =>
+                  (await import("./content-runtime/subtitles/main")).runSubtitlesContent,
+              })
+            }
+          : undefined,
+    })
   },
 })

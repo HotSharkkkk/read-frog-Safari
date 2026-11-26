@@ -35,6 +35,16 @@ export default defineContentScript({
       return
     }
 
-    await runContentLoader(["host"])
+    await runContentLoader(["host"], {
+      loadRuntime:
+        import.meta.env.BROWSER === "safari"
+          ? async () => {
+              const { createContentRuntime } = await import("@/utils/content-runtime/run")
+              return createContentRuntime({
+                host: async () => (await import("./content-runtime/host/main")).runHostContent,
+              })
+            }
+          : undefined,
+    })
   },
 })

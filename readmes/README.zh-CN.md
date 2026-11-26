@@ -87,6 +87,8 @@ Read Frog 的愿景是为各个级别的语言学习者提供易于使用、智�
 | Edge    | [![Edge version badge][edge-version-shield]][edge-store-link]          | [Microsoft Edge 插件商店][edge-store-link]                       |
 | Firefox | [![Firefox version badge][firefox-version-shield]][firefox-store-link] | [Firefox 附加组件][firefox-store-link]                           |
 
+macOS Safari 用户可参考 [Safari 本地安装与构建指南](./safari.md)。
+
 ### 社区
 
 | [![Discord badge][discord-shield-badge]][discord-link] | 在 Discord 中提问，与开发者交流。              |

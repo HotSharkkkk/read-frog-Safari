@@ -12,12 +12,12 @@ const EXTENSION_PAGES = ["offscreen", "options", "popup", "sidepanel", "translat
 
 // Bootstraps injected into a great many frames, kept as small as they can be.
 // They log nothing themselves; what they load sets up its own logging.
-const EXEMPT = new Set([
+const CONTENT_LOADERS = [
   "loader.content.ts",
   "subtitles-loader.content.ts",
-  "iframe-selection-trigger.content.ts",
   "ebook-section.content.ts",
-])
+]
+const EXEMPT = new Set([...CONTENT_LOADERS, "iframe-selection-trigger.content.ts"])
 
 // WXT builds a folder only when it has an index file in it
 function isEntrypoint(name: string): boolean {
@@ -47,6 +47,7 @@ const isMainWorld = (source: string) => /world:\s*"MAIN"/.test(source)
 
 function setupCallFor(name: string): string {
   if (name === "background") return "setupBackgroundLogging()"
+  if (name === "content-runtime") return "createContentRuntime("
   if (EXTENSION_PAGES.includes(name)) return `setupExtensionPageLogging("${name}")`
   return "setupContentScriptLogging()"
 }
@@ -66,6 +67,16 @@ describe("entrypoint logging setup", () => {
 
   it.each(loggingEntrypoints)("$name calls $call", ({ source, call }) => {
     expect(source).toContain(call)
+  })
+
+  it("sets up logging in the shared content runtime factory", () => {
+    const source = readFileSync(path.resolve("src/utils/content-runtime/run.ts"), "utf8")
+    expect(source).toContain("setupContentScriptLogging()")
+  })
+
+  it.each(CONTENT_LOADERS)("%s calls the content runtime factory on Safari", (name) => {
+    const source = readFileSync(entryFile(name), "utf8")
+    expect(source).toMatch(/import\.meta\.env\.BROWSER === "safari"[\s\S]*?createContentRuntime\(/)
   })
 
   // The page's own world has no extension APIs to forward records with.

@@ -15,10 +15,16 @@ export function newUserGuide() {
 }
 
 export async function guidePinExtension() {
+  const canReadPinState = typeof browser.action?.getUserSettings === "function"
   onMessage("getPinState", async () => {
+    if (!canReadPinState) return true
     const { isOnToolbar } = await browser.action.getUserSettings()
     return isOnToolbar
   })
+
+  // The website guide treats true as completion of the optional toolbar step.
+  // Safari exposes no pin state to detect or poll.
+  if (!canReadPinState) return
 
   void checkPinnedAndNotify()
 

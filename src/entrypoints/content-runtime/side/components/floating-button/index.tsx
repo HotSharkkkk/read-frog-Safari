@@ -214,7 +214,7 @@ export default function FloatingButton() {
   }
 
   const handleFloatingButtonClick = () => {
-    if (floatingButton.clickAction === "translate") {
+    if (import.meta.env.BROWSER === "safari" || floatingButton.clickAction === "translate") {
       if (!isFeatureOn(config, "pageTranslation")) {
         showPageTranslationOffToast()
         return

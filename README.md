@@ -87,6 +87,8 @@ Whether you are a user or a developer, Read Frog will be an important part of yo
 | Edge    | [![Edge Version badge][edge-version-shield]][edge-store-link]          | [Microsoft Edge Addons][edge-store-link]                          |
 | Firefox | [![Firefox Version badge][firefox-version-shield]][firefox-store-link] | [Firefox Add-ons][firefox-store-link]                             |
 
+For macOS Safari, see the [local installation and build guide](./readmes/safari.md).
+
 ### Community
 
 | [![Discord badge][discord-shield-badge]][discord-link] | In Discord ask questions, and connect with developers.                                 |
