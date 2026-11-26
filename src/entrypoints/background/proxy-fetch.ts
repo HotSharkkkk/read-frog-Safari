@@ -27,6 +27,7 @@ function encodeArrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary)
 }
 
+/** Register background fetch handlers and keep cached auth responses in sync with login changes. */
 export function proxyFetch() {
   // Simplified: No need for in-memory Map, CacheRegistry handles everything
   async function getSessionCache(groupKey: string) {
@@ -52,6 +53,9 @@ export function proxyFetch() {
   // Listen for cookie changes to invalidate auth-related cache
   if (browser.cookies?.onChanged) {
     browser.cookies.onChanged.addListener(async (changeInfo) => {
+      // Safari can fire onChanged without details about the changed cookie.
+      if (!changeInfo?.cookie) return
+
       const { cookie, removed, cause } = changeInfo
       // Check if it's an auth-related cookie for monitored domains
       if (

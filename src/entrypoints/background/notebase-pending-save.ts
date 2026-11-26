@@ -713,6 +713,7 @@ export function createNotebasePendingSaveProcessor(deps: PendingNotebaseSaveProc
   }
 }
 
+/** Check for pending saves at startup and retry when a login cookie changes. */
 export function setupNotebasePendingSaveProcessor(waitUntilReady: () => Promise<void>) {
   const processPendingNotebaseSave = createNotebasePendingSaveProcessor({
     waitUntilReady,
@@ -758,7 +759,9 @@ export function setupNotebasePendingSaveProcessor(waitUntilReady: () => Promise<
 
   if (browser.cookies?.onChanged) {
     browser.cookies.onChanged.addListener((changeInfo) => {
-      if (isAuthCookieChange(changeInfo.cookie)) {
+      // Safari can fire onChanged without details about the changed cookie.
+      const cookie = changeInfo?.cookie
+      if (cookie && isAuthCookieChange(cookie)) {
         void processPendingNotebaseSave("auth-cookie-change")
       }
     })
